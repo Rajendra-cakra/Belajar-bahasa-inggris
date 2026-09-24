@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocab Quiz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap');
+
+  :root {
+    --bg: #f5f2eb;
+    --surface: #ffffff;
+    --border: #d4cfc4;
+    --text: #1a1a1a;
+    --muted: #888;
+    --accent: #2563eb;
+    --green: #16a34a;
+    --red: #dc2626;
+    --green-bg: #dcfce7;
+    --red-bg: #fee2e2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .screen { display: none; width: 100%; max-width: 540px; }
+  .screen.active { display: block; }
+
+  /* ── HOME ── */
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 36px;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .btn-level {
+    padding: 10px 0;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--text);
+  }
+
+  .btn-level:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn-level.selected { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+  /* ── COUNT BUTTONS ── */
+  .count-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .btn-count {
+    padding: 10px 0;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--text);
+  }
+
+  .btn-count:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn-count.selected { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .btn-count:disabled { opacity: .32; cursor: not-allowed; background: var(--bg); }
+
+  .mode-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+
+  .btn-mode {
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+    color: var(--text);
+  }
+
+  .btn-mode:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-mode.selected { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+  .btn-start {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+
+  .btn-start:disabled { opacity: .35; cursor: not-allowed; }
+  .btn-start:not(:disabled):hover { opacity: .85; }
+
+  /* ── QUIZ ── */
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .btn-back {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .btn-back:hover { color: var(--text); }
+
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    margin-left: 20px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width .4s ease;
+  }
+
+  .progress-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .score-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 99px;
+    color: var(--muted);
+    margin-left: 12px;
+    flex-shrink: 0;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 36px 32px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .card-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .card-word {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: -1px;
+  }
+
+  .input-wrap {
+    position: relative;
+    margin-bottom: 12px;
+  }
+
+  #answer-input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s, background .15s;
+  }
+
+  #answer-input:focus { border-color: var(--accent); }
+  #answer-input.correct { border-color: var(--green); background: var(--green-bg); }
+  #answer-input.wrong   { border-color: var(--red);   background: var(--red-bg);   }
+
+  .feedback {
+    min-height: 22px;
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 12px;
+    font-weight: 600;
+    transition: opacity .2s;
+  }
+
+  .feedback.correct { color: var(--green); }
+  .feedback.wrong   { color: var(--red); }
+
+  .btn-submit {
+    width: 100%;
+    padding: 13px;
+    background: var(--text);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+
+  .btn-submit:hover { opacity: .75; }
+  .btn-submit:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* ── FINISH ── */
+  .finish-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+
+  .finish-icon { font-size: 48px; margin-bottom: 16px; }
+  .finish-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  .finish-score {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 32px;
+    color: var(--accent);
+    margin: 12px 0 4px;
+  }
+  .finish-pct { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+
+  .finish-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .btn-retry {
+    padding: 12px 28px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-home {
+    padding: 12px 24px;
+    background: none;
+    color: var(--muted);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .btn-home:hover, .btn-retry:hover { opacity: .8; }
+
+  /* ── WRONG LIST ── */
+  .wrong-list-wrap {
+    text-align: left;
+    border-top: 1.5px solid var(--border);
+    padding-top: 20px;
+  }
+
+  .wrong-list-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .wrong-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 5px;
+    background: var(--red-bg);
+    color: var(--red);
+    margin-bottom: 6px;
+    border: 1px solid #fca5a5;
+  }
+
+  .all-correct-msg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--green);
+    padding: 14px;
+    background: var(--green-bg);
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    text-align: center;
+    border-top: 1.5px solid var(--border);
+    padding-top: 20px;
+  }
+
+  /* ── EMPTY NOTICE ── */
+  .empty-notice {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     HOME SCREEN
+══════════════════════════════════════════ -->
+<div id="screen-home" class="screen active">
+  <div class="logo">Vocab Quiz</div>
+  <h1>Belajar Kosakata</h1>
+  <p class="subtitle">Pilih level, jumlah soal, dan mode, lalu mulai latihan.</p>
+
+  <div class="section-label">Pilih Level</div>
+  <div class="level-grid" id="level-grid"></div>
+
+  <div class="section-label">Pilih Jumlah Soal</div>
+  <div class="count-grid" id="count-grid"></div>
+
+  <div class="section-label">Pilih Mode</div>
+  <div class="mode-list">
+    <button class="btn-mode" data-mode="toId">🇮🇩 &nbsp;Translate ke Bahasa Indonesia</button>
+    <button class="btn-mode" data-mode="toEn">🇬🇧 &nbsp;Translate ke Bahasa Inggris</button>
+  </div>
+
+  <button class="btn-start" id="btn-start" disabled>Mulai Quiz →</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     QUIZ SCREEN
+══════════════════════════════════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-header">
+    <button class="btn-back" id="btn-back">← Kembali</button>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <span class="progress-text" id="progress-text">0/0</span>
+    </div>
+    <span class="score-badge" id="score-badge">✓ 0</span>
+  </div>
+
+  <div class="card" id="quiz-card">
+    <div class="card-hint" id="card-hint"></div>
+    <div class="card-word" id="card-word"></div>
+  </div>
+
+  <div class="input-wrap">
+    <input type="text" id="answer-input" placeholder="Ketik jawabanmu…" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+  <button class="btn-submit" id="btn-submit">Cek Jawaban</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FINISH SCREEN
+══════════════════════════════════════════ -->
+<div id="screen-finish" class="screen">
+  <div class="finish-box">
+    <div class="finish-icon" id="finish-icon">🎉</div>
+    <div class="finish-title">Quiz Selesai!</div>
+    <div class="finish-score" id="finish-score">0 / 0</div>
+    <div class="finish-pct" id="finish-pct"></div>
+    <div class="finish-actions">
+      <button class="btn-retry" id="btn-retry">Ulangi</button>
+      <button class="btn-home" id="btn-home">Halaman Utama</button>
+    </div>
+    <div id="finish-wrong-section"></div>
+  </div>
+</div>
+
+
+<script>
+/* ════════════════════════════════════════════════════════
+   DATA KOSAKATA
+   ════════════════════════════════════════════════════════
+   Format: { en: "kata Inggris", id: "arti Indonesia" }
+   Multiple jawaban benar: pisahkan dengan  /
+   Contoh: { en: "run", id: "berlari/lari" }
+
+   Level yang masih kosong akan muncul pesan "belum ada soal".
+   ════════════════════════════════════════════════════════ */
+const VOCAB = {
+
+  // ── LEVEL 1 · Basic Verbs ───────────────────────────
+  1: [
+    { en: "fly",    id: "terbang" },
+    { en: "eat",    id: "makan"   },
+    { en: "drink",  id: "minum"   },
+    { en: "run",    id: "berlari" },
+    { en: "sleep",  id: "tidur"   },
+    { en: "the",    id: "itu/tersebut" },
+
+    { en: "be", id: "adalah/berada/menjadi" },
+
+    { en: "of", id: "dari" },
+
+    { en: "and", id: "dan" },
+
+    { en: "to", id: "ke/untuk" },
+
+    { en: "a", id: "sebuah/seorang" },
+
+    { en: "in", id: "di/dalam" },
+
+    { en: "have", id: "memiliki" },
+
+    { en: "it", id: "itu" },
+
+    { en: "you", id: "kamu/anda" },
+
+    { en: "for", id: "untuk" },
+
+    { en: "not", id: "tidak" },
+
+    { en: "that", id: "itu/bahwa" },
+
+    { en: "on", id: "di/di atas" },
+
+    { en: "with", id: "dengan" },
+
+    { en: "do", id: "melakukan" },
+
+    { en: "at", id: "di/pada" },
+
+    { en: "he", id: "dia, laki laki" },
+
+    { en: "we", id: "kami/kita" },
+
+    { en: "this", id: "ini" },
+
+    { en: "they", id: "mereka" },
+
+    { en: "but", id: "tetapi/tapi" },
+
+    { en: "from", id: "dari" },
+
+    { en: "by", id: "oleh/dengan" },
+
+    { en: "will", id: "akan" },
+
+    { en: "or", id: "atau" },
+
+    { en: "his", id: "miliknya, laki laki" },
+
+    { en: "say", id: "mengatakan" },
+
+    { en: "go", id: "pergi" },
+
+    { en: "she", id: "dia, perempuan" },
+
+    { en: "so", id: "jadi/sehingga" },
+
+    { en: "all", id: "semua" },
+
+    { en: "about", id: "tentang" },
+
+    { en: "if", id: "jika" },
+
+    { en: "one", id: "satu" },
+
+    { en: "my", id: "milikku" },
+
+    { en: "know", id: "tahu/mengetahui" },
+
+    { en: "there", id: "di sana" },
+
+    { en: "which", id: "yang mana" },
+
+    { en: "can", id: "bisa/dapat" },
+
+    { en: "get", id: "mendapatkan" },
+
+    { en: "her", id: "dia, perempuan/miliknya" },
+
+    { en: "would", id: "akan/andaikan" },
+
+    { en: "think", id: "berpikir" },
+
+    { en: "like", id: "suka/seperti" },
+
+    { en: "more", id: "lebih" },
+
+    { en: "their", id: "milik mereka" },
+
+    { en: "your", id: "milikmu/mu" },
+
+    { en: "when", id: "kapan/ketika" },
+
+    { en: "what", id: "apa" },
+
+    { en: "make", id: "membuat" },
+
+    { en: "time", id: "waktu" },
+
+    { en: "who", id: "siapa" },
+
+    { en: "see", id: "melihat" },
+
+    { en: "up", id: "ke atas/naik" },
+
+    { en: "people", id: "orang-orang/orang orang" },
+
+    { en: "some", id: "beberapa" },
+
+    { en: "out", id: "keluar" },
+
+    { en: "me/i/i am", id: "aku/saya" },
+
+    { en: "good", id: "baik/bagus" },
+
+    { en: "other", id: "lain" },
+
+    { en: "year", id: "tahun" },
+
+    { en: "well", id: "baik/dengan baik" },
+
+    { en: "our", id: "milik kami/milik kita/kita" },
+
+    { en: "very", id: "sangat" },
+
+    { en: "just/only", id: "hanya" },
+
+    { en: "them", id: "mereka" },
+    { en: "no", id: "tidak" },
+    { en: "take", id: "mengambil" },
+    { en: "because", id: "karena" },
+    { en: "come", id: "datang" },
+    { en: "could", id: "bisa, lampau/dapat, lampau" },
+    { en: "use", id: "menggunakan" },
+    { en: "work", id: "bekerja" },
+    { en: "then", id: "kemudian/lalu" },
+    { en: "now", id: "sekarang" },
+    { en: "also", id: "juga" },
+    { en: "than", id: "daripada" },
+    { en: "him", id: "dia, laki laki" },
+    { en: "into", id: "ke dalam" },
+    { en: "only/just", id: "hanya" },
+    { en: "want", id: "ingin" },
+    { en: "look", id: "melihat" },
+    { en: "these", id: "ini, jamak" },
+    { en: "its", id: "miliknya" },
+    { en: "new", id: "baru" },
+    { en: "give", id: "memberi" },
+    { en: "first", id: "pertama" },
+    { en: "way", id: "cara/jalan" },
+    
+    // 91-182    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    { en: "thing", id: "benda/barang/hal" },
+    { en: "any", id: "apa pun/beberapa/setiap" },
+    { en: "over", id: "di atas/selesai/lebih" },
+    { en: "right", id: "kanan/benar/hak" },
+    { en: "after", id: "setelah/sesudah" },
+    { en: "find", id: "menemukan/mendapati" },
+    { en: "day", id: "hari/siang" },
+    { en: "where", id: "di mana/ke mana" },
+    { en: "most", id: "paling/sebagian besar" },
+    { en: "should", id: "harus/sebaiknya" },
+    { en: "need", id: "butuh/memerlukan/keperluan" },
+    { en: "much", id: "banyak/sangat" },
+    { en: "how", id: "bagaimana/berapa" },
+    { en: "back", id: "belakang/kembali/punggung" },
+    { en: "mean", id: "berarti/bermaksud/kejam" },
+    { en: "may", id: "boleh/mungkin/Mei" },
+    { en: "such", id: "seperti itu/demikian" },
+    { en: "us", id: "kami/kita" },
+    { en: "here", id: "di sini/ke sini" },
+    { en: "really", id: "sangat/benarkah/sungguh" },
+    { en: "even", id: "bahkan/genap/rata" },
+    { en: "company", id: "perusahaan/pertemanan/rombongan" },
+    { en: "those", id: "itu (banyak)" },
+    { en: "many", id: "banyak" },
+    { en: "child", id: "anak" },
+    { en: "tell", id: "memberi tahu/mengatakan" },
+    { en: "last", id: "terakhir/lalu/bertahan" },
+    { en: "call", id: "memanggil/menelepon/panggilan" },
+    { en: "down", id: "bawah/turun" },
+    { en: "yes", id: "ya" },
+    { en: "before", id: "sebelum/di depan" },
+    { en: "man", id: "pria/manusia" },
+    { en: "through", id: "melalui/lewat/menembus" },
+    { en: "show", id: "menunjukkan/pertunjukan" },
+    { en: "life", id: "hidup/kehidupan" },
+    { en: "between", id: "di antara (dua hal)" },
+    { en: "lot", id: "banyak/lahan" },
+    { en: "feel", id: "merasa/merasakan/perasaan" },
+    { en: "place", id: "tempat/menempatkan" },
+    { en: "change", id: "mengubah/berubah/kembalian/perubahan" },
+    { en: "long", id: "panjang/lama" },
+    { en: "too", id: "juga/terlalu" },
+    { en: "pause", id: "jeda/berhenti sejenak" },
+    { en: "still", id: "masih/tenang/diam" },
+    { en: "write", id: "menulis" },
+    { en: "problem", id: "masalah" },
+    { en: "talk", id: "berbicara/mengobrol/pembicaraan" },
+    { en: "try", id: "mencoba/usaha" },
+    { en: "something", id: "sesuatu" },
+    { en: "unclear", id: "tidak jelas/kabur" },
+    { en: "same", id: "sama" },
+    { en: "great", id: "besar/hebat/luar biasa" },
+    { en: "number", id: "nomor/angka/jumlah" },
+    { en: "leave", id: "meninggalkan/pergi/cuti" },
+    { en: "little", id: "kecil/sedikit" },
+    { en: "both", id: "kedua/keduanya" },
+    { en: "meet", id: "bertemu/menemui" },
+    { en: "help", id: "membantu/pertolongan" },
+    { en: "own", id: "milik sendiri/memiliki" },
+    { en: "ask", id: "bertanya/meminta" },
+    { en: "part", id: "bagian/memisahkan" },
+    { en: "country", id: "negara/pedesaan" },
+    { en: "put", id: "meletakkan/menaruh" },
+    { en: "point", id: "titik/poin/maksud/mengarahkan" },
+    { en: "start", id: "mulai/memulai/awal" },
+    { en: "school", id: "sekolah" },
+    { en: "each", id: "setiap/masing-masing" },
+    { en: "become", id: "menjadi" },
+    { en: "interest", id: "minat/bunga (uang)/menarik perhatian" },
+    { en: "old", id: "tua/lama" },
+    { en: "off", id: "mati/lepas/keluar" },
+    { en: "another", id: "yang lain/satu lagi" },
+    { en: "different", id: "berbeda" },
+    { en: "high", id: "tinggi" },
+    { en: "next", id: "berikutnya/selanjutnya/sebelah" },
+    { en: "include", id: "termasuk/menyertakan" },
+    { en: "late", id: "terlambat/larut/almarhum" },
+    { en: "why", id: "mengapa/kenapa" },
+    { en: "live", id: "hidup/tinggal/langsung" },
+    { en: "end", id: "akhir/ujung/mengakhiri" },
+    { en: "world", id: "dunia" },
+    { en: "week", id: "minggu" },
+    { en: "must", id: "harus/wajib" },
+    { en: "while", id: "sementara/sedangkan/waktu" },
+    { en: "never", id: "tidak pernah" },
+    { en: "study", id: "belajar/mempelajari/penelitian" },
+    { en: "kind", id: "jenis/baik hati" },
+    { en: "report", id: "laporan/melaporkan" },
+    { en: "play", id: "bermain/memainkan/drama" },
+    { en: "house", id: "rumah/menampung" },
+    { en: "group", id: "kelompok/grup" },
+    { en: "might", id: "mungkin/kekuatan" }
+  ],
+
+  // ── LEVEL 2 · Basic Nouns ───────────────────────────
+  2: [
+    { en: "house",   id: "rumah" },
+    { en: "school",  id: "sekolah" },
+    { en: "book",    id: "buku" },
+    { en: "table",   id: "meja" },
+    { en: "chair",   id: "kursi" },
+    { en: "door",    id: "pintu" },
+    { en: "window",  id: "jendela" },
+    { en: "water",   id: "air" },
+    { en: "food",    id: "makanan" },
+    { en: "pen",     id: "pena/bolpen" },
+    { en: "bag",     id: "tas" },
+    { en: "road",    id: "jalan" },
+    { en: "car",     id: "mobil" },
+    { en: "tree",    id: "pohon" },
+    { en: "flower",  id: "bunga" },
+    { en: "sun",     id: "matahari" },
+    { en: "moon",    id: "bulan" },
+    { en: "star",    id: "bintang" },
+    { en: "sky",     id: "langit" },
+    { en: "sea",     id: "laut" },
+    { en: "river",   id: "sungai" },
+    { en: "mountain",id: "gunung" },
+    { en: "rain",    id: "hujan" },
+    { en: "wind",    id: "angin" },
+    { en: "fire",    id: "api" },
+  ],
+
+  // ── LEVEL 3 · Colors & Numbers ──────────────────────
+  3: [
+    { en: "red",     id: "merah" },
+    { en: "blue",    id: "biru" },
+    { en: "green",   id: "hijau" },
+    { en: "yellow",  id: "kuning" },
+    { en: "black",   id: "hitam" },
+    { en: "white",   id: "putih" },
+    { en: "orange",  id: "oranye/jingga" },
+    { en: "purple",  id: "ungu" },
+    { en: "pink",    id: "merah muda/pink" },
+    { en: "brown",   id: "coklat" },
+    { en: "one",     id: "satu" },
+    { en: "two",     id: "dua" },
+    { en: "three",   id: "tiga" },
+    { en: "four",    id: "empat" },
+    { en: "five",    id: "lima" },
+    { en: "six",     id: "enam" },
+    { en: "seven",   id: "tujuh" },
+    { en: "eight",   id: "delapan" },
+    { en: "nine",    id: "sembilan" },
+    { en: "ten",     id: "sepuluh" },
+    { en: "hundred", id: "seratus" },
+    { en: "thousand",id: "seribu" },
+    { en: "first",   id: "pertama" },
+    { en: "last",    id: "terakhir" },
+    { en: "half",    id: "setengah/separuh" },
+  ],
+
+  // ── LEVEL 4 · Food & Drink ──────────────────────────
+  4: [
+    { en: "rice",    id: "nasi/beras" },
+    { en: "bread",   id: "roti" },
+    { en: "egg",     id: "telur" },
+    { en: "milk",    id: "susu" },
+    { en: "sugar",   id: "gula" },
+    { en: "salt",    id: "garam" },
+    { en: "pepper",  id: "lada/merica" },
+    { en: "chicken", id: "ayam" },
+    { en: "beef",    id: "daging sapi" },
+    { en: "fish",    id: "ikan" },
+    { en: "vegetable",id: "sayuran" },
+    { en: "fruit",   id: "buah" },
+    { en: "apple",   id: "apel" },
+    { en: "banana",  id: "pisang" },
+    { en: "orange",  id: "jeruk" },
+    { en: "coffee",  id: "kopi" },
+    { en: "tea",     id: "teh" },
+    { en: "juice",   id: "jus" },
+    { en: "cake",    id: "kue" },
+    { en: "soup",    id: "sup/sop" },
+    { en: "noodle",  id: "mi/mie" },
+    { en: "oil",     id: "minyak" },
+    { en: "butter",  id: "mentega" },
+    { en: "cheese",  id: "keju" },
+    { en: "chocolate",id: "coklat" },
+  ],
+
+  // ── LEVEL 5 · Animals ───────────────────────────────
+  5: [
+    { en: "cat",       id: "kucing" },
+    { en: "dog",       id: "anjing" },
+    { en: "bird",      id: "burung" },
+    { en: "fish",      id: "ikan" },
+    { en: "rabbit",    id: "kelinci" },
+    { en: "horse",     id: "kuda" },
+    { en: "cow",       id: "sapi" },
+    { en: "goat",      id: "kambing" },
+    { en: "sheep",     id: "domba" },
+    { en: "pig",       id: "babi" },
+    { en: "tiger",     id: "harimau" },
+    { en: "lion",      id: "singa" },
+    { en: "elephant",  id: "gajah" },
+    { en: "monkey",    id: "monyet" },
+    { en: "snake",     id: "ular" },
+    { en: "crocodile", id: "buaya" },
+    { en: "frog",      id: "katak" },
+    { en: "butterfly", id: "kupu-kupu" },
+    { en: "bee",       id: "lebah" },
+    { en: "ant",       id: "semut" },
+    { en: "chicken",   id: "ayam" },
+    { en: "duck",      id: "bebek" },
+    { en: "eagle",     id: "elang" },
+    { en: "shark",     id: "hiu" },
+    { en: "whale",     id: "paus" },
+  ],
+
+  // ── LEVEL 6 · Family & People ───────────────────────
+  6: [
+    { en: "father",   id: "ayah/bapak" },
+    { en: "mother",   id: "ibu/mama" },
+    { en: "brother",  id: "saudara laki-laki/kakak/adik laki-laki" },
+    { en: "sister",   id: "saudara perempuan/kakak/adik perempuan" },
+    { en: "son",      id: "anak laki-laki" },
+    { en: "daughter", id: "anak perempuan" },
+    { en: "grandfather", id: "kakek" },
+    { en: "grandmother", id: "nenek" },
+    { en: "uncle",    id: "paman/om" },
+    { en: "aunt",     id: "bibi/tante" },
+    { en: "cousin",   id: "sepupu" },
+    { en: "friend",   id: "teman/sahabat" },
+    { en: "teacher",  id: "guru" },
+    { en: "student",  id: "siswa/murid" },
+    { en: "doctor",   id: "dokter" },
+    { en: "nurse",    id: "perawat" },
+    { en: "police",   id: "polisi" },
+    { en: "soldier",  id: "tentara/prajurit" },
+    { en: "farmer",   id: "petani" },
+    { en: "driver",   id: "pengemudi/sopir" },
+    { en: "cook",     id: "juru masak/koki" },
+    { en: "neighbor", id: "tetangga" },
+    { en: "stranger", id: "orang asing" },
+    { en: "child",    id: "anak/anak-anak" },
+    { en: "adult",    id: "dewasa/orang dewasa" },
+  ],
+
+  // ── LEVEL 7 · Places & Directions ──────────────────
+  7: [
+    { en: "hospital",   id: "rumah sakit" },
+    { en: "market",     id: "pasar" },
+    { en: "bank",       id: "bank" },
+    { en: "library",    id: "perpustakaan" },
+    { en: "restaurant", id: "restoran" },
+    { en: "hotel",      id: "hotel" },
+    { en: "airport",    id: "bandara/bandar udara" },
+    { en: "station",    id: "stasiun" },
+    { en: "mosque",     id: "masjid" },
+    { en: "church",     id: "gereja" },
+    { en: "north",      id: "utara" },
+    { en: "south",      id: "selatan" },
+    { en: "east",       id: "timur" },
+    { en: "west",       id: "barat" },
+    { en: "left",       id: "kiri" },
+    { en: "right",      id: "kanan" },
+    { en: "straight",   id: "lurus" },
+    { en: "near",       id: "dekat" },
+    { en: "far",        id: "jauh" },
+    { en: "in front",   id: "di depan" },
+    { en: "behind",     id: "di belakang" },
+    { en: "beside",     id: "di samping" },
+    { en: "above",      id: "di atas" },
+    { en: "below",      id: "di bawah" },
+    { en: "inside",     id: "di dalam" },
+  ],
+
+  // ── LEVEL 8 · Adjectives ────────────────────────────
+  8: [
+    { en: "big",      id: "besar" },
+    { en: "small",    id: "kecil" },
+    { en: "tall",     id: "tinggi" },
+    { en: "short",    id: "pendek" },
+    { en: "long",     id: "panjang" },
+    { en: "wide",     id: "lebar" },
+    { en: "narrow",   id: "sempit" },
+    { en: "heavy",    id: "berat" },
+    { en: "light",    id: "ringan/terang" },
+    { en: "hot",      id: "panas" },
+    { en: "cold",     id: "dingin" },
+    { en: "warm",     id: "hangat" },
+    { en: "fast",     id: "cepat" },
+    { en: "slow",     id: "lambat/pelan" },
+    { en: "beautiful",id: "cantik/indah" },
+    { en: "ugly",     id: "jelek/buruk" },
+    { en: "clean",    id: "bersih" },
+    { en: "dirty",    id: "kotor" },
+    { en: "full",     id: "penuh" },
+    { en: "empty",    id: "kosong" },
+    { en: "strong",   id: "kuat" },
+    { en: "weak",     id: "lemah" },
+    { en: "happy",    id: "senang/bahagia" },
+    { en: "sad",      id: "sedih" },
+    { en: "angry",    id: "marah" },
+  ],
+
+  // ── LEVEL 9 · Intermediate Verbs ────────────────────
+  9: [
+    { en: "understand", id: "mengerti/memahami" },
+    { en: "remember",   id: "ingat/mengingat" },
+    { en: "forget",     id: "lupa/melupakan" },
+    { en: "believe",    id: "percaya" },
+    { en: "decide",     id: "memutuskan" },
+    { en: "explain",    id: "menjelaskan" },
+    { en: "describe",   id: "menggambarkan/mendeskripsikan" },
+    { en: "compare",    id: "membandingkan" },
+    { en: "choose",     id: "memilih" },
+    { en: "refuse",     id: "menolak" },
+    { en: "accept",     id: "menerima" },
+    { en: "agree",      id: "setuju/menyetujui" },
+    { en: "disagree",   id: "tidak setuju" },
+    { en: "prepare",    id: "menyiapkan/mempersiapkan" },
+    { en: "improve",    id: "meningkatkan/memperbaiki" },
+    { en: "practice",   id: "berlatih/latihan" },
+    { en: "achieve",    id: "mencapai" },
+    { en: "succeed",    id: "berhasil/sukses" },
+    { en: "fail",       id: "gagal" },
+    { en: "try",        id: "mencoba/coba" },
+    { en: "manage",     id: "mengelola/mengatur" },
+    { en: "discuss",    id: "mendiskusikan/membahas" },
+    { en: "suggest",    id: "menyarankan/mengusulkan" },
+    { en: "warn",       id: "memperingatkan" },
+    { en: "encourage",  id: "mendorong/mendukung" },
+  ],
+
+  // ── LEVEL 10 · Advanced ─────────────────────────────
+  10: [
+    { en: "ambiguous",    id: "ambigu/tidak jelas" },
+    { en: "consequence",  id: "konsekuensi/akibat" },
+    { en: "emphasize",    id: "menekankan" },
+    { en: "fundamental",  id: "mendasar/fundamental" },
+    { en: "phenomenon",   id: "fenomena" },
+    { en: "perspective",  id: "perspektif/sudut pandang" },
+    { en: "significant",  id: "signifikan/berarti" },
+    { en: "sufficient",   id: "cukup/memadai" },
+    { en: "justify",      id: "membenarkan/membuktikan" },
+    { en: "interpret",    id: "menafsirkan/menginterpretasikan" },
+    { en: "evaluate",     id: "mengevaluasi/menilai" },
+    { en: "analyze",      id: "menganalisis" },
+    { en: "summarize",    id: "merangkum/meringkas" },
+    { en: "contradict",   id: "bertentangan/membantah" },
+    { en: "acknowledge",  id: "mengakui" },
+    { en: "assumption",   id: "asumsi/anggapan" },
+    { en: "circumstance", id: "keadaan/situasi" },
+    { en: "controversy",  id: "kontroversi" },
+    { en: "elaborate",    id: "menguraikan/menjelaskan lebih lanjut" },
+    { en: "imply",        id: "menyiratkan/mengimplikasikan" },
+    { en: "inevitable",   id: "tak terhindarkan/pasti terjadi" },
+    { en: "neglect",      id: "mengabaikan/menelantarkan" },
+    { en: "profound",     id: "mendalam/sangat dalam" },
+    { en: "rely",         id: "mengandalkan/bergantung" },
+    { en: "tendency",     id: "kecenderungan" },
+  ],
+
+}; // ← jangan hapus kurung kurawal ini
+/* ════════════════════════════════════════════════════════ */
+
+
+/* ──────────────────────────────────────────
+   STATE
+────────────────────────────────────────── */
+let selectedLevel  = null;
+let selectedCount  = null;  // number or "full"
+let selectedMode   = null;  // "toId" | "toEn"
+let questions      = [];
+let currentIdx     = 0;
+let score          = 0;
+let wrongAnswers   = [];
+let answered       = false;
+
+/* ──────────────────────────────────────────
+   HELPERS
+────────────────────────────────────────── */
+const $    = id => document.getElementById(id);
+const show = id => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function normalize(str) {
+  return str.trim().toLowerCase()
+    .replace(/[.,!?;:'"]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+function isCorrect(userAnswer, correctField) {
+  const norm = normalize(userAnswer);
+  const accepted = correctField.split('/').map(s => normalize(s));
+  return accepted.includes(norm);
+}
+
+/* ──────────────────────────────────────────
+   COUNT OPTIONS
+────────────────────────────────────────── */
+const COUNT_OPTIONS = [10, 20, 30, 40, 50, 'Full'];
+
+/* ──────────────────────────────────────────
+   BUILD HOME
+────────────────────────────────────────── */
+
+// Level buttons
+const levelGrid = $('level-grid');
+for (let i = 1; i <= 10; i++) {
+  const btn = document.createElement('button');
+  btn.className = 'btn-level';
+  btn.textContent = `L${i}`;
+  btn.dataset.level = i;
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btn-level').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedLevel = i;
+    // reset count selection and update count buttons
+    selectedCount = null;
+    updateCountButtons();
+    checkReady();
+  });
+  levelGrid.appendChild(btn);
+}
+
+// Count buttons
+const countGrid = $('count-grid');
+COUNT_OPTIONS.forEach(opt => {
+  const btn = document.createElement('button');
+  btn.className = 'btn-count';
+  btn.textContent = opt === 'Full' ? 'Full' : opt;
+  btn.dataset.count = opt;
+  btn.disabled = true; // disabled until a level is selected
+  btn.addEventListener('click', () => {
+    if (btn.disabled) return;
+    document.querySelectorAll('.btn-count').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedCount = opt;
+    checkReady();
+  });
+  countGrid.appendChild(btn);
+});
+
+function updateCountButtons() {
+  const levelWords = (VOCAB[selectedLevel] || []).length;
+  document.querySelectorAll('.btn-count').forEach(btn => {
+    const val = btn.dataset.count;
+    btn.classList.remove('selected');
+    if (val === 'Full') {
+      // Full is always enabled if level has at least 1 word
+      btn.disabled = levelWords === 0;
+    } else {
+      const n = parseInt(val, 10);
+      btn.disabled = n > levelWords;
+    }
+  });
+  selectedCount = null;
+}
+
+// Mode buttons
+document.querySelectorAll('.btn-mode').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedMode = btn.dataset.mode;
+    checkReady();
+  });
+});
+
+function checkReady() {
+  $('btn-start').disabled = !(selectedLevel !== null && selectedCount !== null && selectedMode !== null);
+}
+
+$('btn-start').addEventListener('click', startQuiz);
+
+/* ──────────────────────────────────────────
+   START QUIZ
+────────────────────────────────────────── */
+function startQuiz() {
+  const raw = VOCAB[selectedLevel] || [];
+
+  // Reset input/submit visibility
+  $('answer-input').style.display = '';
+  $('btn-submit').style.display = '';
+
+  if (!raw.length) {
+    show('screen-quiz');
+    $('quiz-card').innerHTML = `<div class="empty-notice">Level ${selectedLevel} belum ada soal.<br>Silakan isi data di bagian <code>VOCAB[${selectedLevel}]</code>.</div>`;
+    $('answer-input').style.display = 'none';
+    $('feedback').textContent = '';
+    $('btn-submit').style.display = 'none';
+    return;
+  }
+
+  const shuffled = shuffle(raw);
+  if (selectedCount === 'Full') {
+    questions = shuffled;
+  } else {
+    questions = shuffled.slice(0, parseInt(selectedCount, 10));
+  }
+
+  currentIdx   = 0;
+  score        = 0;
+  wrongAnswers = [];
+  answered     = false;
+
+  show('screen-quiz');
+  renderQuestion();
+}
+
+/* ──────────────────────────────────────────
+   RENDER QUESTION
+────────────────────────────────────────── */
+function renderQuestion() {
+  const q = questions[currentIdx];
+  answered = false;
+
+  if (selectedMode === 'toId') {
+    $('card-hint').textContent = 'Apa artinya dalam Bahasa Indonesia?';
+    $('card-word').textContent = q.en;
+  } else {
+    $('card-hint').textContent = 'Apa terjemahan Bahasa Inggrisnya?';
+    $('card-word').textContent = q.id;
+  }
+
+  // Reset card
+  $('quiz-card').style.borderColor = '';
+
+  const inp = $('answer-input');
+  inp.value = '';
+  inp.className = '';
+  inp.disabled = false;
+  inp.focus();
+
+  $('feedback').textContent = '';
+  $('feedback').className = 'feedback';
+  $('btn-submit').disabled = false;
+  $('btn-submit').textContent = 'Cek Jawaban';
+
+  // Progress
+  const total = questions.length;
+  const done  = currentIdx;
+  $('progress-fill').style.width = `${(done / total) * 100}%`;
+  $('progress-text').textContent = `${done + 1}/${total}`;
+  $('score-badge').textContent   = `✓ ${score}`;
+}
+
+/* ──────────────────────────────────────────
+   SUBMIT ANSWER
+────────────────────────────────────────── */
+function submitAnswer() {
+  if (answered) return;
+
+  const inp    = $('answer-input');
+  const rawVal = inp.value;
+  if (!rawVal.trim()) return;
+
+  answered = true;
+
+  const q         = questions[currentIdx];
+  const correct   = selectedMode === 'toId' ? q.id : q.en;
+  const right     = isCorrect(rawVal, correct);
+  const fb        = $('feedback');
+
+  if (right) {
+    score++;
+    inp.classList.add('correct');
+    fb.textContent = '✓ Benar!';
+    fb.className   = 'feedback correct';
+  } else {
+    inp.classList.add('wrong');
+    fb.textContent = `✗ Jawaban: ${correct}`;
+    fb.className   = 'feedback wrong';
+    wrongAnswers.push(q);
+  }
+
+  $('btn-submit').disabled = true;
+  $('score-badge').textContent = `✓ ${score}`;
+
+  setTimeout(nextQuestion, 1500);
+}
+
+function nextQuestion() {
+  currentIdx++;
+  if (currentIdx >= questions.length) {
+    showFinish();
+  } else {
+    renderQuestion();
+  }
+}
+
+/* ──────────────────────────────────────────
+   FINISH
+────────────────────────────────────────── */
+function showFinish() {
+  const total = questions.length;
+  const pct   = Math.round((score / total) * 100);
+
+  $('finish-score').textContent = `${score} / ${total}`;
+  $('finish-pct').textContent   = `${pct}% benar`;
+
+  // Icon & title tweak
+  $('finish-icon').textContent = pct === 100 ? '🏆' : pct >= 70 ? '🎉' : '📚';
+
+  // Wrong answers section
+  const section = $('finish-wrong-section');
+  if (wrongAnswers.length === 0) {
+    section.innerHTML = `<div class="all-correct-msg">Semua jawaban benar 🎉</div>`;
+  } else {
+    const items = wrongAnswers.map(q =>
+      `<div class="wrong-item">${q.en} = ${q.id}</div>`
+    ).join('');
+    section.innerHTML = `
+      <div class="wrong-list-wrap">
+        <div class="wrong-list-title">Jawaban Salah (${wrongAnswers.length})</div>
+        ${items}
+      </div>`;
+  }
+
+  show('screen-finish');
+}
+
+/* ──────────────────────────────────────────
+   EVENT LISTENERS
+────────────────────────────────────────── */
+$('btn-submit').addEventListener('click', submitAnswer);
+
+$('answer-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitAnswer();
+});
+
+$('btn-back').addEventListener('click', () => {
+  show('screen-home');
+});
+
+$('btn-retry').addEventListener('click', startQuiz);
+
+$('btn-home').addEventListener('click', () => {
+  show('screen-home');
+});
+</script>
+</body>
+</html>
